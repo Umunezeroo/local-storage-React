@@ -1,0 +1,583 @@
+/* =========================================
+   RESPONSIVE IMPROVEMENTS
+   Desktop, tablet and mobile
+========================================= */
+
+/* Prevent content from overflowing */
+html {
+  width: 100%;
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+#root {
+  width: 100%;
+  max-width: 100%;
+}
+
+.app-layout,
+.main-content,
+.page-content,
+.students-page,
+.panel {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Desktop and laptop */
+.main-content {
+  width: calc(100% - 250px);
+}
+
+.page-content {
+  overflow-wrap: anywhere;
+}
+
+.dashboard-cards,
+.students-page .dashboard {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.student-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.table-wrapper {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+table {
+  min-width: 650px;
+}
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 220px;
+    padding: 22px 14px;
+  }
+
+  .main-content {
+    width: calc(100% - 220px);
+    margin-left: 220px;
+  }
+
+  .page-content {
+    padding: 20px;
+  }
+
+  .dashboard-cards,
+  .students-page .dashboard {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .panel {
+    padding: 20px;
+  }
+}
+
+/* Small tablets and phones */
+@media (max-width: 760px) {
+  .app-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Sidebar becomes a top navigation area */
+  .sidebar {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    padding: 12px 16px;
+    overflow: visible;
+  }
+
+  .brand {
+    padding: 6px 4px 14px;
+    font-size: 18px;
+  }
+
+  .navigation {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .nav-link {
+    flex: 1 1 130px;
+    justify-content: center;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px;
+    text-align: center;
+  }
+
+  .menu-label,
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    width: 100%;
+    min-height: 0;
+    margin-left: 0;
+  }
+
+  .page-header {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    min-height: 68px;
+    padding: 14px 18px;
+  }
+
+  .page-content {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .welcome-card {
+    padding: 22px;
+  }
+
+  .welcome-card h2 {
+    font-size: 23px;
+  }
+
+  .student-form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .form-actions {
+    grid-column: auto;
+  }
+
+  .list-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .search-input {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+/* Mobile phones */
+@media (max-width: 480px) {
+  .page-content {
+    padding: 12px;
+  }
+
+  .page-header {
+    gap: 10px;
+    padding: 13px 12px;
+  }
+
+  .page-header h1 {
+    font-size: 18px;
+  }
+
+  .page-header p {
+    font-size: 12px;
+  }
+
+  .profile {
+    gap: 7px;
+  }
+
+  .avatar {
+    width: 35px;
+    height: 35px;
+  }
+
+  .dashboard-cards,
+  .students-page .dashboard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .overview-card,
+  .students-page .dashboard > div,
+  .students-page .dashboard > section {
+    padding: 17px;
+  }
+
+  .welcome-card {
+    padding: 18px;
+    border-radius: 12px;
+  }
+
+  .welcome-card h2 {
+    font-size: 21px;
+  }
+
+  .welcome-card p {
+    font-size: 13px;
+  }
+
+  .panel {
+    padding: 15px;
+    border-radius: 11px;
+  }
+
+  .panel h2 {
+    font-size: 19px;
+  }
+
+  .student-form {
+    gap: 16px;
+  }
+
+  .field input,
+  .field select,
+  .field textarea,
+  .search-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .form-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-actions button,
+  .primary-btn,
+  .secondary-btn {
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .navigation {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .nav-link {
+    width: 100%;
+    padding: 10px 6px;
+    font-size: 12px;
+  }
+
+  .action-link {
+    width: 100%;
+    margin: 5px 0;
+  }
+
+  /* Keep the student table usable without squeezing columns */
+  .table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  table {
+    min-width: 650px;
+  }
+
+  th,
+  td {
+    padding: 11px 12px;
+    font-size: 12px;
+  }
+
+  .actions {
+    gap: 6px;
+  }
+
+  .edit-btn,
+  .delete-btn {
+    padding: 8px 10px;
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 360px) {
+  .page-content {
+    padding: 9px;
+  }
+
+  .sidebar {
+    padding: 10px;
+  }
+
+  .brand {
+    font-size: 16px;
+  }
+
+  .welcome-card h2 {
+    font-size: 19px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .navigation {
+    gap: 6px;
+  }
+
+  .nav-link {
+    font-size: 11px;
+  }
+}
+
+/* Respect users who prefer reduced animation */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+/* Dashboard navigation layout */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: 245px;
+  padding: 28px 18px;
+  display: flex;
+  flex-direction: column;
+  background: #14532d;
+  color: white;
+  z-index: 10;
+}
+
+.brand {
+  margin: 0 0 35px;
+  color: white;
+  font-size: 25px;
+}
+
+.brand span {
+  color: #86efac;
+  margin-left: 6px;
+}
+
+.menu-label {
+  margin: 0 0 14px 10px;
+  color: #bbf7d0;
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.navigation {
+  display: grid;
+  gap: 8px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px;
+  border-radius: 8px;
+  color: #dcfce7;
+  text-decoration: none;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  background: #166534;
+  color: white;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  color: #bbf7d0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.main-content {
+  min-height: 100vh;
+  margin-left: 245px;
+  padding: 28px;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.page-header h1 {
+  margin-bottom: 7px;
+}
+
+.page-header p {
+  margin: 0;
+  color: #64748b;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #166534;
+}
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 30px;
+  border-radius: 14px;
+  background: #dcfce7;
+  margin-bottom: 24px;
+}
+
+.welcome-card h2 {
+  color: #14532d;
+}
+
+.welcome-card p {
+  color: #475569;
+  line-height: 1.6;
+}
+
+.welcome-icon {
+  font-size: 55px;
+}
+
+.dashboard-button {
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 7px;
+  background: #15803d;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.dashboard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.overview-card {
+  padding: 22px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.05);
+}
+
+.overview-card > span {
+  display: block;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.overview-card > strong {
+  display: block;
+  margin: 15px 0;
+  color: #166534;
+  font-size: 30px;
+}
+
+.overview-card p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.quick-actions h2 {
+  font-size: 19px;
+}
+
+.action-link {
+  color: #15803d;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+.action-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    width: 190px;
+  }
+
+  .main-content {
+    margin-left: 190px;
+    padding: 20px;
+  }
+
+  .dashboard-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding: 16px;
+  }
+
+  .brand {
+    margin-bottom: 18px;
+  }
+
+  .navigation {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sidebar-footer {
+    display: none;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 18px 12px;
+  }
+
+  .page-header {
+    align-items: flex-start;
+  }
+
+  .profile span {
+    display: none;
+  }
+
+  .welcome-card {
+    padding: 20px;
+  }
+
+  .welcome-icon {
+    font-size: 35px;
+  }
+}
