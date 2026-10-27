@@ -1,376 +1,219 @@
+import { useEffect, useRef, useState } from "react";
+import {
+  downloadCsv,
+  getStudents,
+  saveStudents,
+} from "../data/storage.js";
 
+const emptyForm = { fullName: "", gender: "", trade: "", level: "" };
 
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let quoted = false;
 
-
-import { useEffect, useState } from 'react';
-import '../App.css';
-
-const sampleStudents = [
-  {
-    id: 1,
-    fullName: 'Jean Claude',
-    gender: 'Male',
-    trade: 'SOD',
-    level: 'Level 4',
-  },
-  {
-    id: 2,
-    fullName: 'Alice Uwase',
-    gender: 'Female',
-    trade: 'BDC',
-    level: 'Level 3',
-  },
-];
-
-const emptyForm = {
-  fullName: '',
-  gender: '',
-  trade: '',
-  level: '',
-};
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === '"' && quoted && text[index + 1] === '"') {
+      cell += '"';
+      index += 1;
+    } else if (character === '"') {
+      quoted = !quoted;
+    } else if (character === "," && !quoted) {
+      row.push(cell.trim());
+      cell = "";
+    } else if ((character === "\n" || character === "\r") && !quoted) {
+      if (character === "\r" && text[index + 1] === "\n") index += 1;
+      row.push(cell.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  row.push(cell.trim());
+  if (row.some(Boolean)) rows.push(row);
+  return rows;
+}
 
 function StudentsPage() {
-  const [students, setStudents] = useState(sampleStudents);
+  const [students, setStudents] = useState(() => getStudents());
   const [form, setForm] = useState(emptyForm);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
+  const fileInput = useRef(null);
 
-  // Update the form when the user types or selects an option
-  function handleChange(event) {
-    const { name, value } = event.target;
+  useEffect(() => {
+    const update = () => setStudents(getStudents());
+    window.addEventListener("studentsUpdated", update);
+    window.addEventListener("storage", update);
+    return () => {
+      window.removeEventListener("studentsUpdated", update);
+      window.removeEventListener("storage", update);
+    };
+  }, []);
 
-    setForm((previousForm) => ({
-      ...previousForm,
-      [name]: value,
-    }));
+  function updateStudents(nextStudents) {
+    setStudents(nextStudents);
+    saveStudents(nextStudents);
   }
 
-  // Add a new student or update an existing student
   function handleSubmit(event) {
     event.preventDefault();
-
-    const fullName = form.fullName.trim().replace(/\s+/g, ' ');
-
-    if (!fullName) {
-      setMessage('Please enter the student full name.');
-      return;
-    }
-
-    // Prevent duplicate names in the same trade and level
-    const duplicate = students.some((student) => {
-      const sameName =
-        student.fullName.toLowerCase() === fullName.toLowerCase();
-
-      const sameTrade = student.trade === form.trade;
-      const sameLevel = student.level === form.level;
-      const differentStudent = student.id !== editingId;
-
-      return (
-        sameName &&
-        sameTrade &&
-        sameLevel &&
-        differentStudent
-      );
-    });
-
+    const fullName = form.fullName.trim().replace(/\s+/g, " ");
+    const duplicate = students.some(
+      (student) =>
+        student.fullName.toLowerCase() === fullName.toLowerCase() &&
+        student.trade === form.trade &&
+        student.level === form.level &&
+        student.id !== editingId
+    );
     if (duplicate) {
-      setMessage(
-        'This student already exists in the same trade and level.'
-      );
+      setMessage("This student already exists in the same trade and level.");
       return;
     }
 
-    const studentData = {
-      ...form,
-      fullName,
-    };
-
-    if (editingId !== null) {
-      setStudents((previousStudents) =>
-        previousStudents.map((student) =>
+    const updated = editingId === null
+      ? [...students, { id: Date.now(), ...form, fullName, tableId: null }]
+      : students.map((student) =>
           student.id === editingId
-            ? { ...student, ...studentData }
+            ? { ...student, ...form, fullName, tableId: student.tableId ?? null }
             : student
-        )
-      );
-
-      setMessage('Student updated successfully!');
-    } else {
-      const newStudent = {
-        id: Date.now(),
-        ...studentData,
-      };
-
-      setStudents((previousStudents) => [
-        ...previousStudents,
-        newStudent,
-      ]);
-
-      setMessage('Student registered successfully!');
-    }
-
+        );
+    updateStudents(updated);
     setForm(emptyForm);
     setEditingId(null);
+    setMessage(editingId === null ? "Student registered." : "Student updated.");
   }
 
-  // Load a student's information into the form
-  function handleEdit(student) {
+  function editStudent(student) {
     setForm({
       fullName: student.fullName,
       gender: student.gender,
       trade: student.trade,
       level: student.level,
     });
-
     setEditingId(student.id);
-    setMessage('');
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  // Delete a student after confirmation
-  function handleDelete(id) {
-    const confirmed = window.confirm(
-      'Are you sure you want to delete this student?'
-    );
-
-    if (!confirmed) return;
-
-    setStudents((previousStudents) =>
-      previousStudents.filter((student) => student.id !== id)
-    );
-
-    if (editingId === id) {
+  function deleteStudent(student) {
+    if (!window.confirm(`Remove ${student.fullName} from the student list?`)) return;
+    updateStudents(students.filter((item) => item.id !== student.id));
+    if (editingId === student.id) {
       setForm(emptyForm);
       setEditingId(null);
     }
-
-    setMessage('Student deleted successfully!');
+    setMessage("Student removed.");
   }
 
-  function handleCancel() {
-    setForm(emptyForm);
-    setEditingId(null);
-    setMessage('');
+  async function importStudents(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const rows = parseCsv(await file.text());
+      if (rows.length < 2) throw new Error("The CSV must include a header and at least one student.");
+      const headers = rows[0].map((header) => header.toLowerCase().replace(/[^a-z]/g, ""));
+      const findColumn = (...names) => headers.findIndex((header) => names.includes(header));
+      const columns = {
+        fullName: findColumn("fullname", "name", "studentname"),
+        gender: findColumn("gender"),
+        trade: findColumn("trade"),
+        level: findColumn("level", "class"),
+      };
+      if (Object.values(columns).some((index) => index < 0)) {
+        throw new Error("CSV headers must include Name, Gender, Trade, and Level.");
+      }
+      const imported = rows.slice(1).map((values, index) => {
+        const student = Object.fromEntries(
+          Object.entries(columns).map(([key, column]) => [key, (values[column] ?? "").trim()])
+        );
+        if (Object.values(student).some((value) => !value)) {
+          throw new Error(`Row ${index + 2} is missing a required student field.`);
+        }
+        if (!["male", "female"].includes(student.gender.toLowerCase())) {
+          throw new Error(`Row ${index + 2} has an invalid gender (use Male or Female).`);
+        }
+        student.gender = student.gender[0].toUpperCase() + student.gender.slice(1).toLowerCase();
+        student.id = Date.now() + index;
+        student.tableId = null;
+        return student;
+      });
+      updateStudents([...students, ...imported]);
+      setMessage(`${imported.length} student(s) imported. Review records before assigning tables.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to import this CSV file.");
+    } finally {
+      event.target.value = "";
+    }
   }
 
-  // Search all student fields
   const filteredStudents = students.filter((student) =>
-    [
-      student.fullName,
-      student.gender,
-      student.trade,
-      student.level,
-    ].some((value) =>
-      value.toLowerCase().includes(search.toLowerCase().trim())
-    )
+    [student.fullName, student.gender, student.trade, student.level]
+      .some((value) => value?.toLowerCase().includes(search.toLowerCase().trim()))
   );
+  const trades = new Set(students.map((student) => student.trade)).size;
+  const levels = new Set(students.map((student) => student.level)).size;
 
   return (
-    <main className="app">
-      <header className="topbar">
+    <section className="page-stack">
+      <div className="page-intro">
         <div>
-          <h1>Student Management</h1>
-          <p>School Registration Dashboard</p>
+          <p className="eyebrow">STUDENT DIRECTORY</p>
+          <h2>Manage student records</h2>
+          <p>Add students one at a time or import a class list from a CSV file.</p>
         </div>
+        <button className="button button-secondary" onClick={() => fileInput.current?.click()}>
+          Import class list
+        </button>
+        <input ref={fileInput} className="visually-hidden" type="file" accept=".csv,text/csv" onChange={importStudents} />
+      </div>
 
-        <span className="school-badge">SMS</span>
-      </header>
-
-      <section className="dashboard">
-        <div className="stat-card">
-          <span>Total Registered Students</span>
-          <strong>{students.length}</strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Trades Offered</span>
-          <strong>4</strong>
-        </div>
-
-        <div className="stat-card">
-          <span>Levels Available</span>
-          <strong>3</strong>
-        </div>
+      <section className="stat-grid" aria-label="Student totals">
+        <article className="stat-card"><span>Registered students</span><strong>{students.length}</strong></article>
+        <article className="stat-card"><span>Trades represented</span><strong>{trades}</strong></article>
+        <article className="stat-card"><span>Levels represented</span><strong>{levels}</strong></article>
       </section>
 
       <section className="panel">
-        <h2>
-          {editingId !== null
-            ? 'Edit Student'
-            : 'Register New Student'}
-        </h2>
-
-        <form onSubmit={handleSubmit} className="student-form">
-          <div className="field">
-            <label htmlFor="fullName">Full Name</label>
-            <input
-              id="fullName"
-              name="fullName"
-              type="text"
-              placeholder="Enter full name"
-              value={form.fullName}
-              onChange={handleChange}
-              required
-              maxLength={100}
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="gender">Gender</label>
-            <select
-              id="gender"
-              name="gender"
-              value={form.gender}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="trade">Trade</label>
-            <select
-              id="trade"
-              name="trade"
-              value={form.trade}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select trade</option>
-              <option value="SOD">SOD</option>
-              <option value="BDC">BDC</option>
-              <option value="FAD">FAD</option>
-              <option value="WOT">WOT</option>
-            </select>
-          </div>
-
-          <div className="field">
-            <label htmlFor="level">Level</label>
-            <select
-              id="level"
-              name="level"
-              value={form.level}
-              onChange={handleChange}
-              required
-            >
-              <option value="">Select level</option>
-              <option value="Level 3">Level 3</option>
-              <option value="Level 4">Level 4</option>
-              <option value="Level 5">Level 5</option>
-            </select>
-          </div>
-
-          <div className="form-actions">
-            <button type="submit" className="primary-btn">
-              {editingId !== null
-                ? 'Save Changes'
-                : 'Register Student'}
-            </button>
-
-            {editingId !== null && (
-              <button
-                type="button"
-                className="secondary-btn"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-            )}
-          </div>
+        <div className="section-heading">
+          <div><p className="eyebrow">{editingId === null ? "NEW RECORD" : "UPDATE RECORD"}</p><h3>{editingId === null ? "Register a student" : "Edit student"}</h3></div>
+          {editingId !== null && <button className="button button-quiet" type="button" onClick={() => { setForm(emptyForm); setEditingId(null); setMessage(""); }}>Cancel edit</button>}
+        </div>
+        <form className="student-form" onSubmit={handleSubmit}>
+          <label className="field"><span>Full name</span><input name="fullName" value={form.fullName} onChange={(event) => setForm({ ...form, fullName: event.target.value })} required maxLength={100} placeholder="e.g. Aline Uwase" /></label>
+          <label className="field"><span>Gender</span><select name="gender" value={form.gender} onChange={(event) => setForm({ ...form, gender: event.target.value })} required><option value="">Select gender</option><option>Female</option><option>Male</option></select></label>
+          <label className="field"><span>Trade</span><input name="trade" value={form.trade} onChange={(event) => setForm({ ...form, trade: event.target.value })} required maxLength={40} placeholder="e.g. SOD" /></label>
+          <label className="field"><span>Level / class</span><input name="level" value={form.level} onChange={(event) => setForm({ ...form, level: event.target.value })} required maxLength={40} placeholder="e.g. Level 4" /></label>
+          <div className="form-actions"><button className="button button-primary" type="submit">{editingId === null ? "Add student" : "Save changes"}</button></div>
         </form>
-
-        {message && (
-          <p className="message" role="status">
-            {message}
-          </p>
-        )}
+        {message && <p className="notice" role="status">{message}</p>}
       </section>
 
       <section className="panel">
-        <div className="list-header">
-          <div>
-            <h2>Registered Students</h2>
-            <p>{filteredStudents.length} student(s) displayed</p>
+        <div className="section-heading list-heading">
+          <div><p className="eyebrow">ROSTER</p><h3>Student list <span className="count-pill">{filteredStudents.length}</span></h3></div>
+          <div className="list-tools">
+            <input className="search-input" type="search" placeholder="Search name, trade, level..." value={search} onChange={(event) => setSearch(event.target.value)} aria-label="Search students" />
+            <button className="button button-quiet" type="button" onClick={() => downloadCsv("student-roster.csv", [["Name", "Gender", "Trade", "Level"], ...filteredStudents.map(({ fullName, gender, trade, level }) => [fullName, gender, trade, level])])}>Export CSV</button>
           </div>
-
-          <input
-            className="search-input"
-            type="search"
-            placeholder="Search students..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            aria-label="Search students"
-          />
         </div>
-
-        <div className="table-wrapper">
-          <table>
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Full Name</th>
-                <th>Gender</th>
-                <th>Trade</th>
-                <th>Level</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredStudents.length > 0 ? (
-                filteredStudents.map((student, index) => (
-                  <tr key={student.id}>
-                    <td>{index + 1}</td>
-                    <td>{student.fullName}</td>
-                    <td>{student.gender}</td>
-                    <td>
-                      <span className="tag">{student.trade}</span>
-                    </td>
-                    <td>{student.level}</td>
-                    <td className="actions">
-                      <button
-                        type="button"
-                        className="edit-btn"
-                        onClick={() => handleEdit(student)}
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        type="button"
-                        className="delete-btn"
-                        onClick={() => handleDelete(student.id)}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="empty-state">
-                    No students found. Try another search or register
-                    a new student.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+        <div className="table-wrapper"><table>
+          <thead><tr><th>Student</th><th>Gender</th><th>Trade</th><th>Level / class</th><th>Actions</th></tr></thead>
+          <tbody>{filteredStudents.map((student) => <tr key={student.id}>
+            <td className="student-name">{student.fullName}</td><td>{student.gender}</td><td><span className="tag">{student.trade}</span></td><td>{student.level}</td>
+            <td><div className="actions"><button className="button button-quiet" type="button" onClick={() => editStudent(student)}>Edit</button><button className="button button-danger" type="button" onClick={() => deleteStudent(student)}>Remove</button></div></td>
+          </tr>)}
+          {filteredStudents.length === 0 && <tr><td colSpan="5" className="empty-state">{students.length === 0 ? "No students yet. Register a student or import a class list." : "No students match your search."}</td></tr>}</tbody>
+        </table></div>
+        <p className="helper-text">CSV import headers: Name, Gender, Trade, Level. Data is saved in this browser.</p>
       </section>
-
-      <footer>
-        Student Management System · React Practice Project
-      </footer>
-    </main>
+    </section>
   );
 }
 
 export default StudentsPage;
-
-

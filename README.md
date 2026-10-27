@@ -1,16 +1,31 @@
-# React + Vite
+# TableMate — School Refectory Table Management
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A simple, local-first application for managing student dining lists and refectory seating. It runs in the browser and saves student and table records in that browser's local storage; it does not require an account, server, or database.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Register, search, update, and remove students, including gender, trade, and level/class.
+- Import class rosters from CSV files with `Name`, `Gender`, `Trade`, and `Level` columns; export the student list as CSV.
+- Add, edit, and remove dining tables with a configurable capacity for each table.
+- Automatically assign students across available seats while distributing gender, trade, and level groups; students beyond total capacity remain unassigned.
+- Manually reassign students, with full tables disabled and capacity reductions blocked when a table is occupied beyond the new limit.
+- Review table membership, seating totals, capacity shortages, and unassigned students.
+- Print the seating plan or save it as PDF using the browser's print dialog; export assignment reports as CSV, which can be opened in Excel.
+- Responsive layout for desktop and mobile screens.
 
-## React Compiler
+## Run locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```sh
+npm install
+npm run dev
+```
 
-## Expanding the Oxlint configuration
+Use the app in the same browser and device to access its saved data. Clearing browser site data removes those records. CSV imports expect a header row and one student per row; names and other fields containing commas should be quoted according to standard CSV rules.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Checks
+
+```sh
+npm test
+npm run lint
+npm run build
+```

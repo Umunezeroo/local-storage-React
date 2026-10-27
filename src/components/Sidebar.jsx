@@ -4,32 +4,31 @@ import { NavLink } from 'react-router-dom';
 function Sidebar() {
   return (
     <aside className="sidebar">
-      <h2 className="brand">School<span>SMS</span></h2>
+      <h2 className="brand">Table<span>Mate</span></h2>
 
-      <p className="menu-label">MAIN MENU</p>
+      <p className="menu-label">WORKSPACE</p>
 
       <nav className="navigation">
         <NavLink to="/" end className={({ isActive }) =>
           isActive ? 'nav-link active' : 'nav-link'
         }>
-          <span>▦</span> Dashboard
+          <span aria-hidden="true">⌂</span> Dashboard
         </NavLink>
 
         <NavLink to="/students" className={({ isActive }) =>
           isActive ? 'nav-link active' : 'nav-link'
         }>
-          <span>♙</span> Students
+          <span aria-hidden="true">♙</span> Students
         </NavLink>
-<NavLink to="/tables" className="nav-link">
-  Table Management
-</NavLink>
-        <NavLink to="/students" className="nav-link">
-          <span>＋</span> Register Student
+        <NavLink to="/tables" className={({ isActive }) =>
+          isActive ? 'nav-link active' : 'nav-link'
+        }>
+          <span aria-hidden="true">▦</span> Tables & seating
         </NavLink>
       </nav>
 
       <div className="sidebar-footer">
-        Student Management System
+        Local refectory workspace
       </div>
     </aside>
   );
