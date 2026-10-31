@@ -120,6 +120,10 @@
   font-weight: 650;
 }
 
+.logout-button {
+  margin-left: 3px;
+}
+
 .avatar {
   display: grid;
   width: 36px;
@@ -361,6 +365,103 @@
   display: flex;
   grid-column: 1 / -1;
   gap: 9px;
+}
+
+.auth-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse at top left, rgb(220 235 216 / 75%), transparent 48%),
+    #f7f9f6;
+}
+
+.auth-panel {
+  width: min(100%, 440px);
+  padding: 34px;
+  border: 1px solid #e4ebe4;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 40px rgb(26 56 41 / 8%);
+}
+
+.auth-brand {
+  margin: 0 0 30px;
+  color: #123b32;
+}
+
+.auth-panel > .eyebrow {
+  margin-bottom: 8px;
+  color: #547a5d;
+}
+
+.auth-panel h2 {
+  margin: 0;
+  color: #193d32;
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+
+.auth-description {
+  margin: 9px 0 22px;
+  color: #75827b;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.auth-form {
+  display: grid;
+  gap: 16px;
+  max-width: 520px;
+}
+
+.auth-form .field input {
+  height: 44px;
+  font-size: 13px;
+}
+
+.auth-submit {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 3px;
+}
+
+.auth-submit:disabled,
+.form-actions .button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.auth-message {
+  margin: 0;
+  color: #2a7150;
+  font-size: 12px;
+}
+
+.auth-message-error {
+  color: #a34a3d;
+}
+
+.auth-footnote {
+  margin: 18px 0 0;
+  color: #89938b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.settings-panel {
+  max-width: 680px;
+}
+
+.settings-panel .auth-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: none;
+}
+
+.settings-panel .auth-message,
+.settings-panel .form-actions {
+  grid-column: 1 / -1;
 }
 
 .notice {
@@ -766,7 +867,7 @@ td {
   }
 
   .navigation {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
   }
 
@@ -842,7 +943,7 @@ td {
   }
 
   .navigation {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .nav-link {
@@ -888,8 +989,14 @@ td {
   }
 
   .student-form,
-  .table-grid {
+  .table-grid,
+  .settings-panel .auth-form {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-panel .auth-message,
+  .settings-panel .form-actions {
+    grid-column: auto;
   }
 
   .section-heading,

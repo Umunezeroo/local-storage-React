@@ -25,6 +25,11 @@ function Sidebar() {
         }>
           <span aria-hidden="true">▦</span> Tables & seating
         </NavLink>
+        <NavLink to="/settings" className={({ isActive }) =>
+          isActive ? 'nav-link active' : 'nav-link'
+        }>
+          <span aria-hidden="true">⚙</span> Account
+        </NavLink>
       </nav>
 
       <div className="sidebar-footer">
