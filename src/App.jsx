@@ -8,15 +8,16 @@ import Dashboard from "./pages/Dashboard.jsx";
 import StudentsPage from "./pages/StudentsPage.jsx";
 import TablesPage from "./pages/TablesPage.jsx";
 import { ADMIN_CREDENTIALS_KEY, hasAdminAccount } from "./data/adminAuth.js";
+import { ADMIN_PROFILE_PICTURE_KEY, getAdminProfilePicture } from "./data/adminProfile.js";
 import "./App.css";
 
-function Layout({ username, onLogout, onCredentialsChanged }) {
+function Layout({ username, profilePicture, onLogout, onCredentialsChanged, onProfilePictureChanged }) {
   return (
     <div className="app-layout">
       <Sidebar />
 
       <main className="main-content">
-        <Header username={username} onLogout={onLogout} />
+        <Header username={username} profilePicture={profilePicture} onLogout={onLogout} />
 
         <div className="page-content">
           <Routes>
@@ -25,7 +26,14 @@ function Layout({ username, onLogout, onCredentialsChanged }) {
             <Route path="/tables" element={<TablesPage />} />
             <Route
               path="/settings"
-              element={<AdminSettings username={username} onCredentialsChanged={onCredentialsChanged} />}
+              element={
+                <AdminSettings
+                  username={username}
+                  profilePicture={profilePicture}
+                  onCredentialsChanged={onCredentialsChanged}
+                  onProfilePictureChanged={onProfilePictureChanged}
+                />
+              }
             />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -38,20 +46,38 @@ function Layout({ username, onLogout, onCredentialsChanged }) {
 function AppAccess() {
   const [authState, setAuthState] = useState(() => {
     try {
-      return { mode: hasAdminAccount() ? "login" : "setup", errorMessage: "" };
+      return {
+        mode: hasAdminAccount() ? "login" : "setup",
+        errorMessage: "",
+        profilePicture: getAdminProfilePicture(),
+      };
     } catch (error) {
       return {
         mode: "error",
         errorMessage: error instanceof Error ? error.message : "Unable to read administrator credentials.",
+        profilePicture: "",
       };
     }
   });
   const [username, setUsername] = useState("");
+  const [profilePicture, setProfilePicture] = useState(authState.profilePicture);
   const { mode, errorMessage } = authState;
 
   useEffect(() => {
     function handleCredentialChange(event) {
-      if (event.key === ADMIN_CREDENTIALS_KEY) {
+      if (event.key === ADMIN_PROFILE_PICTURE_KEY) {
+        try {
+          setProfilePicture(getAdminProfilePicture());
+        } catch (error) {
+          setAuthState({
+            mode: "error",
+            errorMessage: error instanceof Error
+              ? error.message
+              : "Unable to read the administrator profile picture.",
+            profilePicture: "",
+          });
+        }
+      } else if (event.key === ADMIN_CREDENTIALS_KEY) {
         setUsername("");
         try {
           setAuthState({
@@ -93,11 +119,13 @@ function AppAccess() {
   return (
     <Layout
       username={username}
+      profilePicture={profilePicture}
       onLogout={() => {
         setUsername("");
         setAuthState({ mode: "login", errorMessage: "" });
       }}
       onCredentialsChanged={setUsername}
+      onProfilePictureChanged={setProfilePicture}
     />
   );
 }

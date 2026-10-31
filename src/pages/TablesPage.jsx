@@ -3,13 +3,20 @@ import {
   createAssignments,
   downloadCsv,
   getStudents,
+  getTableLimit,
   getTables,
   saveStudents,
+  saveTableLimit,
   saveTables,
 } from "../data/storage.js";
 
 function TablesPage() {
   const [tables, setTables] = useState(() => getTables());
+  const [tableLimit, setTableLimitState] = useState(() => getTableLimit());
+  const [availableTableCount, setAvailableTableCount] = useState(() => {
+    const limit = getTableLimit();
+    return limit === null ? "" : String(limit);
+  });
   const [students, setStudents] = useState(() => getStudents());
   const [tableNumber, setTableNumber] = useState("");
   const [capacity, setCapacity] = useState("");
@@ -20,16 +27,24 @@ function TablesPage() {
   useEffect(() => {
     const updateStudents = () => setStudents(getStudents());
     const updateTables = () => setTables(getTables());
+    const updateTableLimit = () => {
+      const limit = getTableLimit();
+      setTableLimitState(limit);
+      setAvailableTableCount(limit === null ? "" : String(limit));
+    };
     window.addEventListener("studentsUpdated", updateStudents);
     window.addEventListener("tablesUpdated", updateTables);
+    window.addEventListener("tableLimitUpdated", updateTableLimit);
     const updateFromStorage = () => {
       updateStudents();
       updateTables();
+      updateTableLimit();
     };
     window.addEventListener("storage", updateFromStorage);
     return () => {
       window.removeEventListener("studentsUpdated", updateStudents);
       window.removeEventListener("tablesUpdated", updateTables);
+      window.removeEventListener("tableLimitUpdated", updateTableLimit);
       window.removeEventListener("storage", updateFromStorage);
     };
   }, []);
@@ -53,6 +68,9 @@ function TablesPage() {
   function updateTables(updated) {
     setTables(updated);
     saveTables(updated);
+    const balancedStudents = createAssignments(students, updated);
+    setStudents(balancedStudents);
+    saveStudents(balancedStudents);
   }
 
   function updateStudents(updated) {
@@ -78,6 +96,14 @@ function TablesPage() {
       setMessage("That table name already exists.");
       return;
     }
+    if (editingId === null && tableLimit === null) {
+      setMessage("Set the available physical table count before adding tables.");
+      return;
+    }
+    if (editingId === null && tables.length >= tableLimit) {
+      setMessage(`All ${tableLimit} available table(s) are already configured.`);
+      return;
+    }
     if (editingId !== null && seats < (tableCounts.get(editingId) ?? 0)) {
       setMessage(`This table already has ${tableCounts.get(editingId)} assigned student(s). Move students before lowering its capacity.`);
       return;
@@ -87,15 +113,32 @@ function TablesPage() {
       : tables.map((table) => table.id === editingId ? { ...table, tableNumber: number, capacity: seats } : table);
     updateTables(updated);
     resetForm();
-    setMessage(editingId === null ? "Table added." : "Table updated.");
+    setMessage(editingId === null
+      ? "Table added and student seating rebalanced."
+      : "Table updated and student seating rebalanced.");
+  }
+
+  function handleSaveTableLimit(event) {
+    event.preventDefault();
+    const limit = Number(availableTableCount);
+    if (!Number.isInteger(limit) || limit < 1) {
+      setMessage("Enter a whole-number count of available physical tables, at least 1.");
+      return;
+    }
+    try {
+      saveTableLimit(limit);
+      setTableLimitState(limit);
+      setMessage(`Available table count set to ${limit}.`);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : "Unable to save available table count.");
+    }
   }
 
   function deleteTable(table) {
-    if (!window.confirm(`Remove ${table.tableNumber}? Students at this table will become unassigned.`)) return;
+    if (!window.confirm(`Remove ${table.tableNumber}? Student assignments will be rebalanced across the remaining tables.`)) return;
     updateTables(tables.filter((item) => item.id !== table.id));
-    updateStudents(students.map((student) => student.tableId === table.id ? { ...student, tableId: null } : student));
     if (editingId === table.id) resetForm();
-    setMessage(`${table.tableNumber} removed; its students are unassigned.`);
+    setMessage(`${table.tableNumber} removed and student seating rebalanced.`);
   }
 
   function assignAutomatically() {
@@ -135,7 +178,7 @@ function TablesPage() {
   return (
     <section className="page-stack">
       <div className="page-intro">
-        <div><p className="eyebrow">REFECTORY SEATING</p><h2>Table management</h2><p>Set capacities, balance the roster, and review or adjust every assignment.</p></div>
+        <div><p className="eyebrow">REFECTORY SEATING</p><h2>Table management</h2><p>Configure available tables, balance the roster, and review or adjust every assignment.</p></div>
         <div className="intro-actions">
           <button className="button button-secondary" type="button" onClick={exportAssignments}>Export report</button>
           <button className="button button-primary" type="button" onClick={() => window.print()}>Print / Save PDF</button>
@@ -155,12 +198,45 @@ function TablesPage() {
       </section>
 
       <section className="panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">REFECTORY INVENTORY</p>
+            <h3>Available physical tables</h3>
+          </div>
+          <span className="count-pill">{tables.length} configured{tableLimit === null ? "" : ` of ${tableLimit}`}</span>
+        </div>
+        <form className="student-form" onSubmit={handleSaveTableLimit}>
+          <label className="field">
+            <span>Number of tables available in the refectory</span>
+            <input
+              type="number"
+              min={Math.max(1, tables.length)}
+              step="1"
+              value={availableTableCount}
+              onChange={(event) => setAvailableTableCount(event.target.value)}
+              placeholder="e.g. 12"
+              required
+            />
+          </label>
+          <div className="form-actions">
+            <button className="button button-secondary" type="submit">Save table limit</button>
+          </div>
+        </form>
+        <p className="helper-text">
+          You can configure up to this many tables. Student seating is automatically rebalanced
+          after roster or table changes, subject to each table’s seat capacity.
+        </p>
+      </section>
+
+      <section className="panel">
         <div className="section-heading"><div><p className="eyebrow">CONFIGURATION</p><h3>{editingId === null ? "Add a dining table" : "Edit dining table"}</h3></div></div>
         <form className="student-form" onSubmit={handleSubmit}>
           <label className="field"><span>Table name / number</span><input value={tableNumber} onChange={(event) => setTableNumber(event.target.value)} placeholder="e.g. North Hall 1" required maxLength={40} /></label>
           <label className="field"><span>Seat capacity</span><input type="number" min="1" step="1" value={capacity} onChange={(event) => setCapacity(event.target.value)} placeholder="e.g. 8" required /></label>
-          <div className="form-actions"><button className="button button-primary" type="submit">{editingId === null ? "Add table" : "Save table"}</button>{editingId !== null && <button className="button button-quiet" type="button" onClick={resetForm}>Cancel</button>}</div>
+          <div className="form-actions"><button className="button button-primary" type="submit" disabled={editingId === null && (tableLimit === null || tables.length >= tableLimit)}>{editingId === null ? "Add table" : "Save table"}</button>{editingId !== null && <button className="button button-quiet" type="button" onClick={resetForm}>Cancel</button>}</div>
         </form>
+        {tableLimit === null && <p className="helper-text">Set the available physical table count above before adding tables.</p>}
+        {tableLimit !== null && tables.length >= tableLimit && editingId === null && <p className="helper-text">All available tables are configured. Increase the physical table count above if more tables are available.</p>}
         {message && <p className="notice" role="status">{message}</p>}
       </section>
 

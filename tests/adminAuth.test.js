@@ -25,6 +25,11 @@ test("admin credentials are hashed, verified, and changeable with the current pa
 
     const storedCredentials = entries.get(ADMIN_CREDENTIALS_KEY);
     assert.equal(storedCredentials.includes("correct-horse-battery-staple"), false);
+    await assert.rejects(
+      createAdminAccount("secondadmin", "another-secure-password"),
+      /An administrator account already exists/
+    );
+    assert.equal(JSON.parse(entries.get(ADMIN_CREDENTIALS_KEY)).username, "schooladmin");
     assert.equal(await verifyAdminLogin("SCHOOLADMIN", "correct-horse-battery-staple"), true);
     assert.equal(await verifyAdminLogin("schooladmin", "incorrect-password"), false);
     assert.equal(await verifyAdminLogin("another-admin", "correct-horse-battery-staple"), false);

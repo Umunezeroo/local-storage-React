@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import {
   downloadCsv,
+  createAssignments,
   getStudents,
+  getTables,
   saveStudents,
 } from "../data/storage.js";
 
@@ -57,8 +59,9 @@ function StudentsPage() {
   }, []);
 
   function updateStudents(nextStudents) {
-    setStudents(nextStudents);
-    saveStudents(nextStudents);
+    const balancedStudents = createAssignments(nextStudents, getTables());
+    setStudents(balancedStudents);
+    saveStudents(balancedStudents);
   }
 
   function handleSubmit(event) {

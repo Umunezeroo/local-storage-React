@@ -1,7 +1,15 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { changeAdminCredentials, MIN_PASSWORD_LENGTH } from "../data/adminAuth.js";
+import {
+  processAdminProfilePicture,
+  removeAdminProfilePicture,
+  saveAdminProfilePicture,
+} from "../data/adminProfile.js";
 
-function AdminSettings({ username, onCredentialsChanged }) {
+function AdminSettings({ username, profilePicture, onCredentialsChanged, onProfilePictureChanged }) {
+  const pictureInput = useRef(null);
+  const [pictureMessage, setPictureMessage] = useState("");
+  const [isProcessingPicture, setIsProcessingPicture] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newUsername, setNewUsername] = useState(username);
   const [newPassword, setNewPassword] = useState("");
@@ -9,6 +17,36 @@ function AdminSettings({ username, onCredentialsChanged }) {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handlePictureChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setPictureMessage("");
+    setIsProcessingPicture(true);
+    try {
+      const picture = await processAdminProfilePicture(file);
+      saveAdminProfilePicture(picture);
+      onProfilePictureChanged(picture);
+      setPictureMessage("Profile picture updated.");
+    } catch (error) {
+      setPictureMessage(error instanceof Error ? error.message : "Unable to update profile picture.");
+    } finally {
+      setIsProcessingPicture(false);
+    }
+  }
+
+  function handlePictureRemoval() {
+    setPictureMessage("");
+    try {
+      removeAdminProfilePicture();
+      onProfilePictureChanged("");
+      setPictureMessage("Profile picture removed.");
+    } catch (error) {
+      setPictureMessage(error instanceof Error ? error.message : "Unable to remove profile picture.");
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -47,6 +85,48 @@ function AdminSettings({ username, onCredentialsChanged }) {
           <p className="eyebrow">ACCOUNT SECURITY</p>
           <h2>Administrator credentials</h2>
           <p>Update the username and password used to sign in to this workspace.</p>
+        </div>
+      </section>
+
+      <section className="panel settings-panel profile-picture-panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">PROFILE</p>
+            <h3>Profile picture</h3>
+          </div>
+        </div>
+        <div className="profile-picture-controls">
+          <div className="profile-picture-preview" aria-label={`${username} profile picture`}>
+            {profilePicture
+              ? <img src={profilePicture} alt="" />
+              : <span aria-hidden="true">{username.charAt(0).toUpperCase()}</span>}
+          </div>
+          <div className="profile-picture-actions">
+            <p className="muted-copy">Choose a JPEG, PNG, or WebP image. It will be resized for local storage.</p>
+            <div className="intro-actions">
+              <button
+                className="button button-secondary"
+                disabled={isProcessingPicture}
+                onClick={() => pictureInput.current?.click()}
+                type="button"
+              >
+                {isProcessingPicture ? "Processing…" : "Change picture"}
+              </button>
+              {profilePicture && (
+                <button className="button button-quiet" onClick={handlePictureRemoval} type="button">
+                  Remove picture
+                </button>
+              )}
+            </div>
+            <input
+              ref={pictureInput}
+              accept="image/jpeg,image/png,image/webp"
+              className="visually-hidden"
+              onChange={handlePictureChange}
+              type="file"
+            />
+            {pictureMessage && <p className="auth-message" role="status">{pictureMessage}</p>}
+          </div>
         </div>
       </section>
 

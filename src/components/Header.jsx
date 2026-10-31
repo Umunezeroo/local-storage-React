@@ -1,7 +1,7 @@
 
 import { useLocation } from 'react-router-dom';
 
-function Header({ username, onLogout }) {
+function Header({ username, profilePicture, onLogout }) {
   const location = useLocation();
 
   const page = {
@@ -19,7 +19,11 @@ function Header({ username, onLogout }) {
       </div>
 
       <div className="profile">
-        <div className="avatar" aria-hidden="true">{username.charAt(0).toUpperCase()}</div>
+        <div className="avatar" aria-hidden="true">
+          {profilePicture
+            ? <img src={profilePicture} alt="" />
+            : username.charAt(0).toUpperCase()}
+        </div>
         <span>{username}</span>
         <button className="button button-quiet logout-button" onClick={onLogout} type="button">
           Sign out

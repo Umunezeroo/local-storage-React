@@ -1,5 +1,29 @@
 export const STUDENTS_KEY = "schoolStudents";
 export const TABLES_KEY = "refectoryTables";
+export const TABLE_LIMIT_KEY = "refectoryTableLimit";
+
+export function getTableLimit() {
+  const saved = window.localStorage.getItem(TABLE_LIMIT_KEY);
+  if (saved === null) return null;
+
+  const limit = Number(saved);
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error("Saved refectory table limit is invalid. Please correct it before adding tables.");
+  }
+  return limit;
+}
+
+export function saveTableLimit(limit) {
+  if (!Number.isInteger(limit) || limit < 1) {
+    throw new Error("Available table count must be a whole number of at least 1.");
+  }
+  const tables = getTables();
+  if (limit < tables.length) {
+    throw new Error(`The available table count cannot be less than the ${tables.length} tables already configured.`);
+  }
+  window.localStorage.setItem(TABLE_LIMIT_KEY, String(limit));
+  window.dispatchEvent(new Event("tableLimitUpdated"));
+}
 
 function readArray(key, fallback) {
   const saved = window.localStorage.getItem(key);
@@ -48,18 +72,20 @@ export function createAssignments(students, tables) {
     );
     if (availableTables.length === 0) continue;
 
-    const chosen = availableTables.reduce((best, table) => {
-      const score = (candidate) => {
-        const count = assignedCounts.get(candidate.id) ?? 0;
+    const leastAssigned = Math.min(...availableTables.map((table) => assignedCounts.get(table.id) ?? 0));
+    const leastFilledTables = availableTables.filter(
+      (table) => (assignedCounts.get(table.id) ?? 0) === leastAssigned
+    );
+    const chosen = leastFilledTables.reduce((best, table) => {
+      const categoryPenalty = (candidate) => {
         const groups = categoryCounts.get(candidate.id);
-        const categoryPenalty = dimensions.reduce(
+        return dimensions.reduce(
           (total, dimension) =>
             total + (groups.get(`${dimension}:${student[dimension]}`) ?? 0),
           0
         );
-        return count / candidate.capacity + categoryPenalty * 0.12;
       };
-      return score(table) < score(best) ? table : best;
+      return categoryPenalty(table) < categoryPenalty(best) ? table : best;
     });
 
     results.set(student.id, chosen.id);

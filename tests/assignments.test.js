@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createAssignments } from "../src/data/storage.js";
+import {
+  createAssignments,
+  getTableLimit,
+  saveTableLimit,
+  saveTables,
+} from "../src/data/storage.js";
 
 test("assignments stay within capacity and report remaining students as unassigned", () => {
   const students = Array.from({ length: 8 }, (_, index) => ({
@@ -63,4 +68,79 @@ test("automatic assignment balances gender, trade, and level across equal tables
 test("students remain unassigned if there are no tables", () => {
   const students = [{ id: 1, fullName: "A Student", gender: "Female", trade: "BDC", level: "Level 3" }];
   assert.deepEqual(createAssignments(students, []), [{ ...students[0], tableId: null }]);
+});
+
+test("automatic assignments distribute students equally across tables when capacity allows", () => {
+  const students = Array.from({ length: 11 }, (_, index) => ({
+    id: index + 1,
+    fullName: `Student ${index + 1}`,
+    gender: "Female",
+    trade: "SOD",
+    level: "Level 4",
+  }));
+  const tables = [
+    { id: 1, tableNumber: "A", capacity: 6 },
+    { id: 2, tableNumber: "B", capacity: 6 },
+    { id: 3, tableNumber: "C", capacity: 6 },
+  ];
+
+  const assignments = createAssignments(students, tables);
+  const counts = tables.map((table) =>
+    assignments.filter((student) => student.tableId === table.id).length
+  );
+  assert.deepEqual(counts, [4, 4, 3]);
+});
+
+test("automatic assignments balance as evenly as possible without exceeding different capacities", () => {
+  const students = Array.from({ length: 8 }, (_, index) => ({
+    id: index + 1,
+    fullName: `Student ${index + 1}`,
+    gender: "Female",
+    trade: "SOD",
+    level: "Level 4",
+  }));
+  const tables = [
+    { id: 1, tableNumber: "A", capacity: 2 },
+    { id: 2, tableNumber: "B", capacity: 6 },
+  ];
+
+  const assignments = createAssignments(students, tables);
+  const counts = tables.map((table) =>
+    assignments.filter((student) => student.tableId === table.id).length
+  );
+  assert.deepEqual(counts, [2, 6]);
+  assert.equal(assignments.filter((student) => student.tableId === null).length, 0);
+});
+
+test("physical table limit is validated and cannot be lower than configured tables", () => {
+  const originalWindow = globalThis.window;
+  const entries = new Map();
+  globalThis.window = {
+    localStorage: {
+      getItem: (key) => entries.get(key) ?? null,
+      setItem: (key, value) => entries.set(key, value),
+    },
+    dispatchEvent() {},
+  };
+
+  try {
+    assert.equal(getTableLimit(), null);
+    saveTableLimit(3);
+    assert.equal(getTableLimit(), 3);
+    assert.throws(() => saveTableLimit(0), /whole number/);
+
+    saveTables([
+      { id: 1, tableNumber: "A", capacity: 4 },
+      { id: 2, tableNumber: "B", capacity: 4 },
+    ]);
+    assert.throws(() => saveTableLimit(1), /cannot be less than the 2 tables/);
+    saveTableLimit(2);
+    assert.equal(getTableLimit(), 2);
+  } finally {
+    if (originalWindow === undefined) {
+      delete globalThis.window;
+    } else {
+      globalThis.window = originalWindow;
+    }
+  }
 });
